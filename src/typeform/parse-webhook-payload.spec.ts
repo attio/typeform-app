@@ -1,3 +1,4 @@
+import {Workflows} from "attio/server"
 import {describe, expect, it, vi} from "vitest"
 import type {TypeformForm} from "../types/types"
 import {buildWebhookOutputsFromParsed, parseWebhookBody} from "./parse-webhook-payload"
@@ -46,14 +47,7 @@ describe("buildWebhookOutputsFromParsed", () => {
         ])
 
         expect(buildWebhookOutputsFromParsed(data, form)).toEqual({
-            Email: {
-                __outcomeValue: "emailAddress",
-                original: "User@Example.com",
-                normalized: "user@example.com",
-                domain: "example.com",
-                root_domain: "example.com",
-                local_specifier: "user",
-            },
+            Email: Workflows.OutcomeValue.emailAddress("User@Example.com"),
         })
     })
 
@@ -85,12 +79,7 @@ describe("buildWebhookOutputsFromParsed", () => {
         ])
 
         expect(buildWebhookOutputsFromParsed(data, form)).toEqual({
-            Phone: {
-                __outcomeValue: "phoneNumber",
-                original: "+12025551234",
-                normalized: "+12025551234",
-                country_code: "US",
-            },
+            Phone: Workflows.OutcomeValue.phoneNumber("+12025551234"),
         })
     })
 
@@ -182,20 +171,8 @@ describe("buildWebhookOutputsFromParsed — contact_info", () => {
         expect(buildWebhookOutputsFromParsed(data, contactInfoForm)).toEqual({
             "Contact - First name": "John",
             "Contact - Last name": "Doe",
-            "Contact - Email": {
-                __outcomeValue: "emailAddress",
-                original: "john@example.com",
-                normalized: "john@example.com",
-                domain: "example.com",
-                root_domain: "example.com",
-                local_specifier: "john",
-            },
-            "Contact - Phone number": {
-                __outcomeValue: "phoneNumber",
-                original: "+12025551234",
-                normalized: "+12025551234",
-                country_code: "US",
-            },
+            "Contact - Email": Workflows.OutcomeValue.emailAddress("john@example.com"),
+            "Contact - Phone number": Workflows.OutcomeValue.phoneNumber("+12025551234"),
             "Contact - Company": "Acme",
             "Contact - Country": "US",
         })
@@ -286,7 +263,6 @@ describe("buildWebhookOutputsFromParsed — individual sub-field answers inside 
         expect(outputs["Contact - First name"]).toBe("John")
         expect(outputs["Contact - Email"]).toMatchObject({
             __outcomeValue: "emailAddress",
-            normalized: "john@example.com",
         })
         expect(outputs["Contact - Phone number"]).toMatchObject({
             __outcomeValue: "phoneNumber",

@@ -14,23 +14,19 @@ import {
     findFieldByRefOrId,
     resolveOutcomeFieldTitle,
 } from "../utils/outcome-field-key"
-import {parseEmailAddress} from "../utils/parse-email-address"
-import {parsePhoneNumber} from "../utils/parse-phone-number"
 
 const CONTACT_INFO_SHORT_TEXT_KEYS = new Set(["first_name", "last_name", "company", "country"])
 
 function toEmailValue(
     raw: string
 ): WorkflowOutcomeDataRuntimeValueOf<WorkflowOutcomeDataNode> | null {
-    const parsed = parseEmailAddress(raw)
-    return parsed ? Workflows.OutcomeValue.emailAddress(parsed) : null
+    return Workflows.OutcomeValue.emailAddress(raw)
 }
 
 function toPhoneValue(
     raw: string
 ): WorkflowOutcomeDataRuntimeValueOf<WorkflowOutcomeDataNode> | null {
-    const parsed = parsePhoneNumber(raw)
-    return parsed ? Workflows.OutcomeValue.phoneNumber(parsed) : null
+    return Workflows.OutcomeValue.phoneNumber(raw)
 }
 
 function extractContactInfoRows(
@@ -99,13 +95,10 @@ function extractAnswerValue(
         case "text":
             return answer.text
         case "email":
-            // The outcome schema declares email fields as `OutcomeSchema.emailAddress()`, whose
-            // runtime value must be a structured `EmailAddressValue`, not a raw string.
             return toEmailValue(answer.email)
         case "url":
             return answer.url
         case "date":
-            // `OutcomeSchema.date()` expects a structured `DateValue`. Typeform delivers an ISO date.
             return Workflows.OutcomeValue.date({value: answer.date})
         case "number":
             return answer.number
@@ -114,7 +107,6 @@ function extractAnswerValue(
         case "phone_number":
             return toPhoneValue(answer.phone_number)
         case "choice": {
-            // Same shape as answerSchema: label for a listed choice, other when the respondent used "Other".
             const c = answer.choice
             return "label" in c ? c.label : c.other
         }

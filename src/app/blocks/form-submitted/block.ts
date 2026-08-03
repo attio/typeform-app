@@ -6,7 +6,7 @@ export default Workflows.defineWorkflowBlock({
     title: "Form submitted",
     description: "Triggers when a Typeform form is submitted",
     requireUserConnection: true,
-    schema: Workflows.ConfigSchema.struct({
+    configSchema: Workflows.ConfigSchema.struct({
         formId: Workflows.ConfigSchema.string(),
     }),
 })

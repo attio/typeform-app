@@ -1,10 +1,10 @@
 import {isErrored} from "@attio/fetchable"
 import {useAsyncCache, Workflows} from "attio/client"
 import React from "react"
-import getForm from "../../typeform/get-form.server"
-import listForms from "../../typeform/list-forms.server"
-import {typeformApiErrorUserMessage} from "../../typeform/types/errors"
-import {convertFieldsToOutcomeSchema} from "../../utils/convert-fields-to-outcome"
+import getForm from "../../../typeform/get-form.server"
+import listForms from "../../../typeform/list-forms.server"
+import {typeformApiErrorUserMessage} from "../../../typeform/types/errors"
+import {convertFieldsToOutcomeSchema} from "../../../utils/convert-fields-to-outcome"
 import block from "./block"
 
 function ConfiguratorContent({workflowBlock}: {workflowBlock: typeof block}) {

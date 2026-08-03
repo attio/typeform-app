@@ -1,8 +1,11 @@
 import {isErrored} from "@attio/fetchable"
 import {Workflows} from "attio/server"
-import {getTypeform} from "../../typeform/get-typeform"
-import {buildWebhookOutputsFromParsed, parseWebhookBody} from "../../typeform/parse-webhook-payload"
-import {typeformApiErrorUserMessage} from "../../typeform/types/errors"
+import {getTypeform} from "../../../typeform/get-typeform"
+import {
+    buildWebhookOutputsFromParsed,
+    parseWebhookBody,
+} from "../../../typeform/parse-webhook-payload"
+import {typeformApiErrorUserMessage} from "../../../typeform/types/errors"
 import block from "./block"
 
 export default Workflows.defineWorkflowBlockTrigger(block, async (request, {config, metadata}) => {
