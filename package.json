@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "@attio/fetchable": "0.0.1-experimental.9",
-    "attio": "0.0.1-experimental.20260724.1",
+    "attio": "1.0.0",
     "react": "19.2.4",
     "zod": "3.25.67"
   },
