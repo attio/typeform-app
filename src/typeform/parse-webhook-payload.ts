@@ -8,11 +8,12 @@ import type {z} from "zod"
 import {webhookPayloadSchema} from "../types/schemas"
 import type {TypeformField, TypeformForm, WebhookAnswer} from "../types/types"
 import {
-    applyParentTitle,
+    joinTitles,
     buildOutcomeRecordFromRows,
     buildParentTitleMap,
     findFieldByRefOrId,
     resolveOutcomeFieldTitle,
+    SUBMITTED_AT_OUTCOME_KEY,
 } from "../utils/outcome-field-key"
 
 const CONTACT_INFO_SHORT_TEXT_KEYS = new Set(["first_name", "last_name", "company", "country"])
@@ -50,7 +51,7 @@ function extractContactInfoRows(
     }> = []
 
     for (const subField of subFields) {
-        const subTitle = applyParentTitle(
+        const subTitle = joinTitles(
             parentTitle,
             resolveOutcomeFieldTitle(subField.title, subField.ref)
         )
@@ -145,7 +146,7 @@ export function buildWebhookOutputsFromParsed(
     data: WebhookPayloadParsed,
     form: TypeformForm
 ): Record<string, WorkflowOutcomeDataRuntimeValueOf<WorkflowOutcomeDataNode>> {
-    const {answers, hidden} = data.form_response
+    const {answers, hidden, submitted_at} = data.form_response
     const parentTitleMap = buildParentTitleMap(form.fields)
 
     const rows: Array<{
@@ -165,7 +166,7 @@ export function buildWebhookOutputsFromParsed(
                     answer.field.ref,
                     answer.field.id
                 )?.title
-                const title = applyParentTitle(
+                const title = joinTitles(
                     parentTitleMap.get(answer.field.ref),
                     resolveOutcomeFieldTitle(answer.field.title ?? fromForm, answer.field.ref)
                 )
@@ -182,6 +183,10 @@ export function buildWebhookOutputsFromParsed(
                 outputs[slug] = value
             }
         }
+    }
+
+    if (submitted_at !== undefined && !(SUBMITTED_AT_OUTCOME_KEY in outputs)) {
+        outputs[SUBMITTED_AT_OUTCOME_KEY] = submitted_at
     }
 
     return outputs

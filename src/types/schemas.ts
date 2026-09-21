@@ -139,6 +139,7 @@ export const webhookPayloadSchema = z
             form_id: z.string(),
             answers: z.array(answerSchema),
             hidden: z.record(z.string(), z.string()).optional(),
+            submitted_at: z.coerce.date().optional().catch(undefined),
         }),
     })
     .passthrough()

@@ -2,6 +2,8 @@ import type {TypeformField} from "../types/types"
 
 const CONTAINER_FIELD_TYPES = new Set(["group", "inline_group", "address", "contact_info"])
 
+export const SUBMITTED_AT_OUTCOME_KEY = "Submitted at"
+
 /**
  * Builds a map of sub-field ref → parent container title prefix.
  * Used by the webhook parser to add the parent title prefix to sub-field output keys,
@@ -16,7 +18,7 @@ export function buildParentTitleMap(
 
     for (const field of fields) {
         const fieldTitle = resolveOutcomeFieldTitle(field.title, field.ref)
-        const prefixedTitle = applyParentTitle(parentTitle, fieldTitle)
+        const prefixedTitle = joinTitles(parentTitle, fieldTitle)
 
         if (CONTAINER_FIELD_TYPES.has(field.type) && field.properties?.fields?.length) {
             for (const subField of field.properties.fields) {
@@ -73,8 +75,8 @@ export function resolveOutcomeFieldTitle(title: string | undefined, ref: string)
     return t
 }
 
-export function applyParentTitle(parentTitle: string | undefined, fieldTitle: string): string {
-    return parentTitle !== undefined ? `${parentTitle} - ${fieldTitle}` : fieldTitle
+export function joinTitles(...parts: Array<string | undefined>): string {
+    return parts.filter((part) => part !== undefined).join(" - ")
 }
 
 export function countOutcomeTitleOccurrences<T extends {title: string}>(

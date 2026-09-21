@@ -5,15 +5,10 @@ import {convertFieldsToOutcomeSchema} from "./convert-fields-to-outcome"
 type StructNode = {kind: "struct"; entries: Record<string, {kind: string; [key: string]: unknown}>}
 
 function entriesOf(result: ReturnType<typeof convertFieldsToOutcomeSchema>) {
-    expect(result).not.toBeNull()
     return (result as unknown as StructNode).entries
 }
 
 describe("convertFieldsToOutcomeSchema", () => {
-    it("returns null when there are no fields or hidden slugs", () => {
-        expect(convertFieldsToOutcomeSchema([], [])).toBeNull()
-    })
-
     it("maps each Typeform field type to the matching outcome node", () => {
         const fields: TypeformField[] = [
             {id: "1", ref: "r_text", title: "Name", type: "short_text"},
@@ -76,7 +71,9 @@ describe("convertFieldsToOutcomeSchema", () => {
 
         const entries = entriesOf(convertFieldsToOutcomeSchema(fields))
 
-        expect(Object.keys(entries).sort()).toEqual(["Email [r_a]", "Email [r_b]"])
+        expect(Object.keys(entries).sort()).toEqual(["Email [r_a]", "Email [r_b]", "Submitted at"])
+        expect(entries["Email [r_a]"].label).toBe("Email [r_a]")
+        expect(entries["Email [r_b]"].label).toBe("Email [r_b]")
     })
 
     it("flattens contact_info sub-fields with correct outcome types", () => {
@@ -105,5 +102,35 @@ describe("convertFieldsToOutcomeSchema", () => {
         expect(entries["Contact - Email"].kind).toBe("emailAddress")
         expect(entries["Contact - Phone number"].kind).toBe("phoneNumber")
         expect(entries["Contact - Company"].kind).toBe("string")
+    })
+})
+
+describe("convertFieldsToOutcomeSchema", () => {
+    it("labels a field with its own title first, then its containers", () => {
+        const fields: TypeformField[] = [
+            {
+                id: "g",
+                ref: "r_g",
+                title: "Step 1",
+                type: "group",
+                properties: {
+                    fields: [
+                        {
+                            id: "ci",
+                            ref: "r_ci",
+                            title: "Your details",
+                            type: "contact_info",
+                            properties: {
+                                fields: [{id: "em", ref: "r_em", title: "Email", type: "email"}],
+                            },
+                        },
+                    ],
+                },
+            },
+        ]
+
+        const entries = entriesOf(convertFieldsToOutcomeSchema(fields))
+
+        expect(entries["Step 1 - Your details - Email"].label).toBe("Email - Your details - Step 1")
     })
 })

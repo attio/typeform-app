@@ -5,3 +5,6 @@ tsconfig.tsbuildinfo
 *.graphql.d.ts
 .attio
 .idea
+
+.env
+.env.local

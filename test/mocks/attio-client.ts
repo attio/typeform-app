@@ -6,7 +6,11 @@
 
 type OutcomeNode = {kind: string; [key: string]: unknown}
 
-const node = (kind: string, extra: Record<string, unknown> = {}): OutcomeNode => ({kind, ...extra})
+const node = (kind: string, extra: Record<string, unknown> = {}): OutcomeNode => {
+    const created: OutcomeNode = {kind, ...extra}
+    created.title = (label: string) => Object.assign(created, {label})
+    return created
+}
 
 export const Workflows = {
     OutcomeSchema: {
@@ -16,6 +20,7 @@ export const Workflows = {
         phoneNumber: () => node("phoneNumber"),
         number: () => node("number"),
         boolean: () => node("boolean"),
+        timestamp: () => node("timestamp"),
         array: (element: OutcomeNode) => node("array", {element}),
         struct: (entries: Record<string, OutcomeNode>) => node("struct", {entries}),
     },
