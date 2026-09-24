@@ -22,26 +22,7 @@ export default Workflows.defineWorkflowBlockTrigger(block, async (request, {conf
     }
 
     const typeform = getTypeform()
-    let formResult: Awaited<ReturnType<typeof typeform.getForm>>
-    try {
-        formResult = await typeform.getForm(config.formId)
-    } catch (error) {
-        console.error(
-            JSON.stringify({
-                msg: "Unexpected error fetching form during webhook trigger",
-                source: "form-submitted-block",
-                operation: "trigger",
-                workflowActivationId: metadata.uniqueActivationId,
-                formId: config.formId,
-                eventFormId: data.form_response.form_id,
-                error:
-                    error instanceof Error
-                        ? {name: error.name, message: error.message}
-                        : {type: typeof error},
-            })
-        )
-        return {type: "no-op"}
-    }
+    const formResult = await typeform.getForm(config.formId)
 
     if (isErrored(formResult)) {
         console.error(

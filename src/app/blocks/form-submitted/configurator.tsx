@@ -1,19 +1,16 @@
 import {isErrored} from "@attio/fetchable"
-import {useAsyncCache, Workflows} from "attio/client"
+import {Workflows} from "attio/client"
 import React from "react"
+import {createFormOptions} from "./form-options"
 import getForm from "../../../typeform/get-form.server"
-import listForms from "../../../typeform/list-forms.server"
 import {typeformApiErrorUserMessage} from "../../../typeform/types/errors"
 import {convertFieldsToOutcomeSchema} from "../../../utils/convert-fields-to-outcome"
 import block from "./block"
 
 function ConfiguratorContent({workflowBlock}: {workflowBlock: typeof block}) {
     const {ComboboxInput, Outcome, watch} = Workflows.useConfigurator(workflowBlock, {})
+    const formOptions = React.useMemo(createFormOptions, [])
 
-    const {values} = useAsyncCache({
-        forms: [listForms],
-    })
-    const formsResult = values.forms
     const formIdValue = watch("formId")
     const formId = formIdValue?.type === "static" ? formIdValue.value : undefined
 
@@ -86,33 +83,7 @@ function ConfiguratorContent({workflowBlock}: {workflowBlock: typeof block}) {
                 label="Form"
                 placeholder="Select a form..."
                 searchPlaceholder="Search forms..."
-                options={{
-                    async getOption(value: string) {
-                        if (isErrored(formsResult)) {
-                            return {
-                                label: typeformApiErrorUserMessage(formsResult.error),
-                                value: "error",
-                            }
-                        }
-                        const form = formsResult.value.find((f) => f.id === value)
-                        return form
-                            ? {label: form.title, value: form.id}
-                            : {label: "Unknown form", value}
-                    },
-                    async search(query: string) {
-                        if (isErrored(formsResult)) {
-                            return [
-                                {
-                                    label: typeformApiErrorUserMessage(formsResult.error),
-                                    value: "error",
-                                },
-                            ]
-                        }
-                        return formsResult.value
-                            .filter((f) => f.title.toLowerCase().includes(query.toLowerCase()))
-                            .map((f) => ({label: f.title, value: f.id}))
-                    },
-                }}
+                options={formOptions}
                 disableVariables
             />
             <Outcome id="done" schema={outcomeSchema} />

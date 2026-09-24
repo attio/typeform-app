@@ -9,6 +9,9 @@ import {type TypeformError, type TypeformResult, unexpectedTypeformError} from "
 
 const BASE_URL = "https://api.typeform.com"
 
+/** Typeform's maximum `page_size` for the list forms endpoint. */
+const LIST_FORMS_PAGE_SIZE = 200
+
 function sanitizeZodIssues(error: {
     issues: Array<{path: Array<string | number>; code: string; message: string}>
 }) {
@@ -36,6 +39,8 @@ function typeformErrorTitleForStatus(status: number): string {
             return "Payment required"
         case 404:
             return "Invalid resource"
+        case 429:
+            return "Rate limited"
         default:
             return "Typeform API error"
     }
@@ -50,6 +55,8 @@ function typeformErrorCodeForStatus(status: number): string | undefined {
             return "PAYMENT_REQUIRED"
         case 404:
             return "INVALID_RESOURCE"
+        case 429:
+            return "RATE_LIMITED"
         default:
             return undefined
     }
@@ -80,6 +87,14 @@ function fallbackTypeformErrorForStatus(status: number): TypeformError[] | null 
                     title: "Invalid resource",
                     detail: "The selected Typeform form could not be found. Please choose a valid form.",
                     code: "INVALID_RESOURCE",
+                },
+            ]
+        case 429:
+            return [
+                {
+                    title: "Rate limited",
+                    detail: "Rate limit reached. Please try again in a moment.",
+                    code: "RATE_LIMITED",
                 },
             ]
         default:
@@ -125,10 +140,21 @@ export class TypeformClient {
     constructor(private readonly token: string) {}
 
     /**
+     * Most recently edited first, so an empty or broad search shows the likeliest picks.
+     *
      * @see https://www.typeform.com/developers/create/reference/retrieve-forms/
      */
-    async listForms(): TypeformResult<TypeformFormSummary[]> {
-        const response = await this.request("GET", "/forms?page_size=200")
+    async listForms({search}: {search: string}): TypeformResult<TypeformFormSummary[]> {
+        const params = new URLSearchParams({
+            page_size: String(LIST_FORMS_PAGE_SIZE),
+            sort_by: "last_updated_at",
+            order_by: "desc",
+        })
+        if (search) {
+            params.set("search", search)
+        }
+
+        const response = await this.request("GET", `/forms?${params.toString()}`)
 
         if (isErrored(response)) {
             return response
@@ -238,16 +264,35 @@ export class TypeformClient {
         subUrl: string,
         body?: Record<string, unknown>
     ): TypeformResult<unknown> {
-        const response = await fetch(`${BASE_URL}${subUrl}`, {
-            method,
-            headers: {
-                Authorization: `Bearer ${this.token}`,
-                ...(body !== undefined ? {"Content-Type": "application/json"} : {}),
-            },
-            ...(body !== undefined ? {body: JSON.stringify(body)} : {}),
-        })
+        let response: Response
+        let text: string
+        try {
+            response = await fetch(`${BASE_URL}${subUrl}`, {
+                method,
+                headers: {
+                    Authorization: `Bearer ${this.token}`,
+                    ...(body !== undefined ? {"Content-Type": "application/json"} : {}),
+                },
+                ...(body !== undefined ? {body: JSON.stringify(body)} : {}),
+            })
+            text = await response.text()
+        } catch (error) {
+            console.error(
+                JSON.stringify({
+                    msg: "Failed to reach Typeform API",
+                    source: "typeform-client",
+                    operation: "request",
+                    method,
+                    subUrl,
+                    error:
+                        error instanceof Error
+                            ? {name: error.name, message: error.message}
+                            : {type: typeof error},
+                })
+            )
+            return errored(unexpectedTypeformError())
+        }
 
-        const text = await response.text()
         const json = text ? safeParseJson(text) : undefined
 
         if (!response.ok) {
@@ -268,7 +313,7 @@ export class TypeformClient {
                     body: text.slice(0, 500),
                 })
             )
-            throw new Error(text || response.statusText)
+            return errored(unexpectedTypeformError())
         }
 
         if (response.status === 204) {
